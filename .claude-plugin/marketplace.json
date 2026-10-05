@@ -1,0 +1,15 @@
+{
+  "name": "nukey-kit",
+  "description": "Nukey the microwave and other extensions for Claude Code",
+  "owner": {
+    "name": "Arif Amir",
+    "url": "https://github.com/arifamir"
+  },
+  "plugins": [
+    {
+      "name": "nukey",
+      "source": "./plugins/nukey",
+      "description": "Mod: Nukey the microwave sits above the prompt and acts out what Claude is doing, with a control-panel meter for context and rate limits"
+    }
+  ]
+}
