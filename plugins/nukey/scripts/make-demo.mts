@@ -1,11 +1,13 @@
 // Writes the README's animations with the mod's own drawings, as the desktop
 // app draws them: assets/demo-scenes.svg loops through a few scenes,
 // assets/demo-meter.svg fills the meter, and assets/demo-meter-details.svg does
-// the same with the readings beside it (`/nukey details`). Run: npx tsx scripts/make-demo.mts
+// the same with the readings beside it (`/nukey details`), and assets/demo-themes.svg
+// shows Nukey in each theme (`/nukey theme`). Run: npx tsx scripts/make-demo.mts
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 import { meterLines, meterSvg, meterWidth } from '../hooks/meter'
 import { NUKEY_WIDTH, PROP_WIDTH, SCENE_HEIGHT, nukeySvg, propSvg } from '../hooks/scenes'
+import { THEMES, THEME_NAMES } from '../hooks/themes'
 
 const OUT = new URL('../assets', import.meta.url).pathname
 
@@ -112,7 +114,24 @@ function meterDemo(detailed: boolean): string {
     : band(246, 'nukey meter: the power bars light up with the context window, the buttons with the rate limits', steps.join(''))
 }
 
+// Nukey in every theme side by side, each with its name under it.
+function themesDemo(): string {
+  const column = 124
+  const width = NUKEY_WIDTH * SCALE
+  const nukeys = THEME_NAMES.map((name, index) => {
+    const x = PAD + index * column
+
+    return (
+      nukeySvg('idle', THEMES[name]).replace(/^<svg /, `<svg x="${x}" y="-4" `).replace(/ width="[\d.]+" height="[\d.]+"/, ` width="${width}" height="${SCENE_HEIGHT * SCALE}"`) +
+      `<text x="${x + width / 2}" y="112" font-size="13" fill="${DIM}" text-anchor="middle">${escape(THEMES[name].label)}</text>`
+    )
+  })
+
+  return band(PAD * 2 + (THEME_NAMES.length - 1) * column + width, 'nukey themes: Nukey in each of its colour schemes', nukeys.join(''))
+}
+
 mkdirSync(OUT, { recursive: true })
 writeFileSync(`${OUT}/demo-scenes.svg`, scenesDemo())
 writeFileSync(`${OUT}/demo-meter.svg`, meterDemo(false))
 writeFileSync(`${OUT}/demo-meter-details.svg`, meterDemo(true))
+writeFileSync(`${OUT}/demo-themes.svg`, themesDemo())

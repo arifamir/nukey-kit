@@ -40,3 +40,36 @@ test('details spell the readings out beside the meter on both surfaces', async (
     await ui.unmount()
   }
 })
+
+test('theme redraws Nukey in the picked colours on both surfaces', async ($, on) => {
+  const kept = new Map<string, unknown>()
+  on('store.set', (_, e) => {
+    kept.set(e.key, e.value)
+
+    return { value: undefined }
+  })
+  const pick = (args: string) =>
+    $.command.run({
+      command: 'nukey',
+      args,
+      origin: { kind: 'composer' },
+      presentation: { isFullscreen: false, columns: 120 },
+    })
+
+  expect((await pick('theme bubblegum')).text).toMatch(/Bubblegum/)
+
+  const desktop = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  const drawings = await desktop.findAll({ type: 'Svg' })
+
+  expect(drawings.some(svg => String(svg.props.source).includes('#FFC6DA'))).toBe(true)
+  await desktop.unmount()
+
+  const terminal = await $.ui.mount({ ...BAND, surface: 'terminal' })
+
+  expect((await terminal.find({ type: 'Text', text: /◕ ◕|- -/ }))?.props.color).toBe('#FF8FB7')
+  await terminal.unmount()
+
+  expect(kept.get('theme')).toBe('bubblegum')
+  expect((await pick('theme toaster')).text).toMatch(/no theme "toaster"/)
+  expect((await pick('theme')).text).toMatch(/Classic cream/)
+})

@@ -1,6 +1,6 @@
 {
   "name": "nukey",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Nukey the microwave sits above the prompt and acts out what Claude is doing: reading, writing code, thinking, searching and more, with a DING! when the turn is done. A control panel beside it shows context and rate-limit usage.",
   "author": {
     "name": "Arif Amir",

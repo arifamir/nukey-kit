@@ -26,6 +26,22 @@ To get new versions, run `claude plugin update nukey@nukey-kit`, or enable auto-
 | `/nukey meter` | Hide or show the control-panel meter |
 | `/nukey details` | Show or hide the meter's readings in figures beside the control panel |
 | `/nukey commands` | Show commands as typed, or go back to the description of what they do |
+| `/nukey theme` | Switch to the next colour theme |
+| `/nukey theme <name>` | Switch to a theme by name: `classic`, `retro`, `steel`, `midnight` or `bubblegum` |
+
+## Themes
+
+Nukey comes in five finishes. The theme colours Nukey, its helpers and the control panel in the desktop app, and Nukey and the meter in the terminal. Your pick is remembered across sessions.
+
+![Nukey in each theme: classic cream, retro mint, stainless steel, midnight and bubblegum](assets/demo-themes.svg)
+
+| Theme | Look |
+| :- | :- |
+| `classic` | Cream body, Claude-orange power bars (the default) |
+| `retro` | 1950s mint green with warm eyes |
+| `steel` | Stainless steel with ice-blue eyes |
+| `midnight` | Dark body with amber eyes, for dark setups |
+| `bubblegum` | Pink all over |
 
 ## Scenes
 

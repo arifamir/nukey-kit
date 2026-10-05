@@ -19,7 +19,7 @@ To receive updates automatically, open `/plugin`, select **Marketplaces** → `n
 
 | Plugin | What it does |
 | :- | :- |
-| [`nukey`](plugins/nukey) | Mod: Nukey the microwave sits above the prompt and acts out what Claude is doing, with a control-panel meter for context and rate limits |
+| [`nukey`](plugins/nukey) | Mod: Nukey the microwave sits above the prompt and acts out what Claude is doing, with a control-panel meter for context and rate limits and five colour themes |
 
 ## License
 

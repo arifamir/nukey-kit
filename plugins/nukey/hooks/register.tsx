@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Elements, EngineInterface, Register, Timer } from 'claude-code'
 
-import type { Activity, Meter, Scene } from '../types'
+import type { Activity, Meter, Scene, ThemeName } from '../types'
 import type { Helper, Lingering } from './activity'
 import {
   activityOf,
@@ -15,6 +15,8 @@ import {
 } from './activity'
 import { meterAlt, meterLines, meterRow, meterSvg, meterWidth } from './meter'
 import { NUKEY_WIDTH, PROP_WIDTH, SCENE_HEIGHT, nukeySvg, propSvg, sceneRows } from './scenes'
+import type { Theme } from './themes'
+import { DEFAULT_THEME, THEMES, THEME_NAMES, isThemeName, nextTheme } from './themes'
 
 const COMMAND = 'nukey'
 const REST_AFTER_MS = 8000
@@ -70,6 +72,9 @@ const isMetered = atom({ plugin: 'nukey', key: 'isMetered' } as const, true)
 const isDetailed = atom({ plugin: 'nukey', key: 'isDetailed' } as const, false)
 // Whether a command shows as typed rather than by its description.
 const isRaw = atom({ plugin: 'nukey', key: 'isRaw' } as const, false)
+// The colours Nukey is drawn in; kept in the store too, so it lasts across sessions.
+const theme = atom({ plugin: 'nukey', key: 'theme' } as const, DEFAULT_THEME as ThemeName)
+const THEME_KEY = 'theme'
 
 const LABELS: Record<Activity, string> = {
   idle: 'Claude is resting',
@@ -481,6 +486,7 @@ function terminalTree(
   tick: number,
   gauged: Meter | undefined,
   detailed: boolean,
+  colours: Theme,
 ) {
   const { Box, Text } = table
   const { activity, detail } = shown
@@ -490,7 +496,7 @@ function terminalTree(
     <Box flexDirection="row" gap={2} width="100%">
       <Box flexDirection="column" flexShrink={0}>
         {rows.nukey.map(row => (
-          <Text color="claude">{row}</Text>
+          <Text color={colours.terminal}>{row}</Text>
         ))}
       </Box>
       <Box flexDirection="column" flexShrink={0}>
@@ -508,7 +514,7 @@ function terminalTree(
       {gauged !== undefined && (
         <Box flexDirection="column" flexShrink={0}>
           <Text> </Text>
-          <Text color="claude">{meterRow(gauged)}</Text>
+          <Text color={colours.terminal}>{meterRow(gauged)}</Text>
         </Box>
       )}
       {gauged !== undefined && detailed && readings(table, gauged)}
@@ -516,7 +522,7 @@ function terminalTree(
   )
 }
 
-function desktopTree(table: Elements['desktop'], shown: Scene, gauged: Meter | undefined, detailed: boolean) {
+function desktopTree(table: Elements['desktop'], shown: Scene, gauged: Meter | undefined, detailed: boolean, colours: Theme) {
   const { Box, Svg, Text } = table
   const { activity, detail } = shown
   const label = LABELS[activity]
@@ -524,9 +530,9 @@ function desktopTree(table: Elements['desktop'], shown: Scene, gauged: Meter | u
   return (
     <Box flexDirection="row" alignItems="center" gap={2} width="100%">
       <Box flexDirection="row" gap={0} flexShrink={0}>
-        <Svg source={nukeySvg(activity)} alt="Nukey the microwave" width={NUKEY_WIDTH} height={SCENE_HEIGHT} />
+        <Svg source={nukeySvg(activity, colours)} alt="Nukey the microwave" width={NUKEY_WIDTH} height={SCENE_HEIGHT} />
         <Svg
-          source={propSvg(activity)}
+          source={propSvg(activity, colours)}
           alt={detail === '' ? label : `${label}: ${detail}`}
           width={PROP_WIDTH}
           height={SCENE_HEIGHT}
@@ -536,7 +542,7 @@ function desktopTree(table: Elements['desktop'], shown: Scene, gauged: Meter | u
         <Text bold>{label}</Text>
         {detail !== '' && detailLine(table, detail)}
       </Box>
-      {gauged !== undefined && <Svg source={meterSvg(gauged)} alt={meterAlt(gauged)} width={meterWidth(gauged)} height={SCENE_HEIGHT} />}
+      {gauged !== undefined && <Svg source={meterSvg(gauged, colours)} alt={meterAlt(gauged)} width={meterWidth(gauged)} height={SCENE_HEIGHT} />}
       {gauged !== undefined && detailed && readings(table, gauged)}
     </Box>
   )
@@ -547,8 +553,8 @@ export const register: Register = on => {
     await $.command.register({
       name: COMMAND,
       description:
-        'Hide or show Nukey; "demo" plays every scene, "meter" shows or hides the control panel, "details" its readings in figures, "commands" shows commands as typed',
-      argumentHint: '[demo|meter|details|commands]',
+        'Hide or show Nukey; "demo" plays every scene, "meter" shows or hides the control panel, "details" its readings in figures, "commands" shows commands as typed, "theme" changes its colours',
+      argumentHint: '[demo|meter|details|commands|theme [name]]',
     })
 
     // A reload in the middle of a turn finds the turn's scene in place and
@@ -557,6 +563,13 @@ export const register: Register = on => {
 
     if (stored.activity === 'done' || stored.activity === 'error') {
       show($, 'idle')
+    }
+
+    // The theme picked in an earlier session, if any.
+    const picked = await $.store.get(THEME_KEY).catch(() => undefined)
+
+    if (isThemeName(picked)) {
+      await update($, theme, () => picked)
     }
 
     // The figures the session already has; later ones come with session.measure.
@@ -600,6 +613,22 @@ export const register: Register = on => {
           ? 'The readings are spelled out beside the control panel. /nukey details hides them again.'
           : 'The readings are gone; the control panel stays. /nukey details puts them back.',
       }
+    }
+
+    if (argument === 'theme' || argument.startsWith('theme ')) {
+      const asked = argument.slice('theme'.length).trim().toLowerCase()
+      const list = THEME_NAMES.map(name => `${name} (${THEMES[name].label})`).join(', ')
+
+      if (asked !== '' && !isThemeName(asked)) {
+        return { text: `There is no theme "${asked}". Pick one of: ${list}.` }
+      }
+
+      const picked = await update($, theme, current => (asked === '' ? nextTheme(current) : (asked as ThemeName)))
+
+      // Kept for later sessions; this one has the theme either way.
+      await $.store.set(THEME_KEY, picked).catch(() => undefined)
+
+      return { text: `Nukey is now ${THEMES[picked].label}. Themes: ${list}.` }
     }
 
     if (argument === 'commands') {
@@ -887,13 +916,14 @@ export const register: Register = on => {
     const shown = await read($, scene)
     const gauged = (await read($, isMetered)) ? await read($, meter) : undefined
     const detailed = await read($, isDetailed)
+    const colours = THEMES[await read($, theme)]
 
     if (e.surface === 'terminal') {
-      return terminalTree($.ui.resolve(e), shown, await read($, frame), gauged, detailed)
+      return terminalTree($.ui.resolve(e), shown, await read($, frame), gauged, detailed, colours)
     }
 
     if (e.surface === 'desktop') {
-      return desktopTree($.ui.resolve(e), shown, gauged, detailed)
+      return desktopTree($.ui.resolve(e), shown, gauged, detailed, colours)
     }
 
     return next(e)

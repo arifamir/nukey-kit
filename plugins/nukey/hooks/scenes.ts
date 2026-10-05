@@ -1,4 +1,6 @@
 import type { Activity } from '../types'
+import type { Theme } from './themes'
+import { DEFAULT_THEME, THEMES } from './themes'
 
 export const ORANGE = '#D97757'
 export const EYE = '#2B2520'
@@ -11,13 +13,6 @@ const RED = '#E5534B'
 const BLUE = '#6CB6FF'
 const INK = '#1E1E28'
 const LINE = '#B9BEC6'
-
-// Nukey: a cream microwave with a dark window for a face.
-export const BODY = '#F5F1E8'
-export const TRIM = '#4A4F5A'
-export const WINDOW = '#23262E'
-const GLOW = '#F8F4EA'
-const CHEEK = '#F4A6B7'
 
 export const SCENE_WIDTH = 128
 export const SCENE_HEIGHT = 64
@@ -77,7 +72,7 @@ const ARMS: Record<Arms, { y: number; left: string; right: string }> = {
   cheer: { y: 4, left: loop('y', '4;1;4', 0.5), right: loop('y', '4;1;4', 0.5, 'begin="0.25s"') },
 }
 
-function eye(x: number, look: Look): string {
+function eye(x: number, look: Look, glow: string): string {
   const { dx, y, height } = EYES[look]
   const blink =
     look === 'closed'
@@ -85,17 +80,17 @@ function eye(x: number, look: Look): string {
       : loop('height', `${height};${height};1;${height}`, 3.4, 'keyTimes="0;0.92;0.96;1"') +
         loop('y', `${y};${y};${y + 2};${y}`, 3.4, 'keyTimes="0;0.92;0.96;1"')
 
-  return `<rect x="${x + dx}" y="${y}" width="3.5" height="${height}" rx="1" fill="${GLOW}">${blink}</rect>`
+  return `<rect x="${x + dx}" y="${y}" width="3.5" height="${height}" rx="1" fill="${glow}">${blink}</rect>`
 }
 
 // Nukey is 48 by 27 before scaling: two stubby arms, a boxy body with a window
-// for a face and a dial panel at the side, and two feet.
-function nukey(x: number, y: number, pose: Pose, scale = 1, delay = 0): string {
+// for a face and a dial panel at the side, and two feet, in the theme's colours.
+function nukey(x: number, y: number, pose: Pose, theme: Theme, scale = 1, delay = 0): string {
   const { look = 'ahead', arms = 'still', bob = 1.6, isShaking = false, wear = '' } = pose
   const motion = isShaking ? slide('0 0;-1.6 0;1.6 0;0 0', 0.28) : slide('0 0;0 -1.6;0 0', bob, `begin="${delay}s"`)
   const arm = (armX: number, animation: string) =>
-    `<rect x="${armX}" y="${ARMS[arms].y}" width="6" height="6" rx="2" fill="${BODY}" stroke="${TRIM}" stroke-width="1.5">${animation}</rect>`
-  const buttons = [13, 16.5, 20].map(buttonY => `<rect x="35" y="${buttonY}" width="5" height="1.8" rx="0.9" fill="${TRIM}" opacity="0.55"/>`).join('')
+    `<rect x="${armX}" y="${ARMS[arms].y}" width="6" height="6" rx="2" fill="${theme.body}" stroke="${theme.trim}" stroke-width="1.5">${animation}</rect>`
+  const buttons = [13, 16.5, 20].map(buttonY => `<rect x="35" y="${buttonY}" width="5" height="1.8" rx="0.9" fill="${theme.trim}" opacity="0.55"/>`).join('')
 
   return (
     `<g transform="translate(${x} ${y}) scale(${scale})">` +
@@ -103,13 +98,13 @@ function nukey(x: number, y: number, pose: Pose, scale = 1, delay = 0): string {
     `<g>${motion}` +
     arm(0, ARMS[arms].left) +
     arm(42, ARMS[arms].right) +
-    `<rect x="10" y="22" width="5" height="4" rx="1" fill="${TRIM}"/><rect x="33" y="22" width="5" height="4" rx="1" fill="${TRIM}"/>` +
-    `<rect x="4" y="0" width="40" height="23" rx="4" fill="${BODY}" stroke="${TRIM}" stroke-width="1.5"/>` +
-    `<rect x="8" y="4" width="23" height="16" rx="2.5" fill="${WINDOW}"/>` +
-    `${eye(12.5, look)}${eye(22, look)}` +
-    `<ellipse cx="11.5" cy="16.5" rx="1.8" ry="1.1" fill="${CHEEK}" opacity="0.8"/><ellipse cx="28" cy="16.5" rx="1.8" ry="1.1" fill="${CHEEK}" opacity="0.8"/>` +
-    `<line x1="33.5" y1="3" x2="33.5" y2="20" stroke="${TRIM}" stroke-width="1" opacity="0.35"/>` +
-    `<circle cx="37.5" cy="7.5" r="2.8" fill="${BODY}" stroke="${TRIM}" stroke-width="1.3"/><line x1="37.5" y1="7.5" x2="37.5" y2="5.4" stroke="${TRIM}" stroke-width="1.1" stroke-linecap="round"/>` +
+    `<rect x="10" y="22" width="5" height="4" rx="1" fill="${theme.trim}"/><rect x="33" y="22" width="5" height="4" rx="1" fill="${theme.trim}"/>` +
+    `<rect x="4" y="0" width="40" height="23" rx="4" fill="${theme.body}" stroke="${theme.trim}" stroke-width="1.5"/>` +
+    `<rect x="8" y="4" width="23" height="16" rx="2.5" fill="${theme.window}"/>` +
+    `${eye(12.5, look, theme.glow)}${eye(22, look, theme.glow)}` +
+    `<ellipse cx="11.5" cy="16.5" rx="1.8" ry="1.1" fill="${theme.cheek}" opacity="0.8"/><ellipse cx="28" cy="16.5" rx="1.8" ry="1.1" fill="${theme.cheek}" opacity="0.8"/>` +
+    `<line x1="33.5" y1="3" x2="33.5" y2="20" stroke="${theme.trim}" stroke-width="1" opacity="0.35"/>` +
+    `<circle cx="37.5" cy="7.5" r="2.8" fill="${theme.body}" stroke="${theme.trim}" stroke-width="1.3"/><line x1="37.5" y1="7.5" x2="37.5" y2="5.4" stroke="${theme.trim}" stroke-width="1.1" stroke-linecap="round"/>` +
     buttons +
     `${wear}` +
     `</g></g>`
@@ -117,7 +112,7 @@ function nukey(x: number, y: number, pose: Pose, scale = 1, delay = 0): string {
 }
 
 // A small Nukey beside the big one, as part of a scene's prop.
-export const helper = (x: number, y: number, delay: number) => nukey(x, y, { bob: 0.7 }, 0.5, delay)
+export const helper = (x: number, y: number, delay: number, theme: Theme) => nukey(x, y, { bob: 0.7 }, theme, 0.5, delay)
 
 export function bubble(inside: string): string {
   return (
@@ -155,7 +150,7 @@ export const bar = (x: number, y: number, width: number, fill: string, extra = '
 export const sparkle = (x: number, y: number, begin: number) =>
   `<path transform="translate(${x} ${y})" d="M0,-6 L1.5,-1.5 L6,0 L1.5,1.5 L0,6 L-1.5,1.5 L-6,0 L-1.5,-1.5 Z" fill="#F2C14E" opacity="0.2">${pulse(begin)}</path>`
 
-export const SCENES: Record<Activity, () => Drawing> = {
+export const SCENES: Record<Activity, (theme: Theme) => Drawing> = {
   idle: () => ({
     pose: { look: 'closed', bob: 3.2 },
     prop: [
@@ -318,9 +313,9 @@ export const SCENES: Record<Activity, () => Drawing> = {
       `<g>${slide('102 46;110 36;97 31;102 46', 3)}<path d="M0,0 L0,11 L3,8.2 L5.4,13 L7.4,12 L5,7.4 L9,7.4 Z" fill="${EYE}" stroke="${PAPER}" stroke-width="0.9"/></g>`,
   }),
 
-  delegating: () => ({
+  delegating: theme => ({
     pose: WAVING,
-    prop: helper(66, 40, 0) + helper(96, 40, 0.35) + helper(81, 18, 0.2),
+    prop: helper(66, 40, 0, theme) + helper(96, 40, 0.35, theme) + helper(81, 18, 0.2, theme),
   }),
 
   talking: () => ({
@@ -521,17 +516,17 @@ const frame = (x: number, width: number, inner: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} 0 ${width} ${SCENE_HEIGHT}" ` +
   `width="${width}" height="${SCENE_HEIGHT}" shape-rendering="geometricPrecision">${inner}</svg>`
 
-export function nukeySvg(activity: Activity): string {
-  return frame(0, NUKEY_WIDTH, nukey(NUKEY_X, NUKEY_Y, SCENES[activity]().pose))
+export function nukeySvg(activity: Activity, theme: Theme = THEMES[DEFAULT_THEME]): string {
+  return frame(0, NUKEY_WIDTH, nukey(NUKEY_X, NUKEY_Y, SCENES[activity](theme).pose, theme))
 }
 
-export function propSvg(activity: Activity): string {
-  return frame(SPLIT, PROP_WIDTH, SCENES[activity]().prop)
+export function propSvg(activity: Activity, theme: Theme = THEMES[DEFAULT_THEME]): string {
+  return frame(SPLIT, PROP_WIDTH, SCENES[activity](theme).prop)
 }
 
 // Nukey and prop as one drawing, for a page that shows a scene on its own.
-export function drawingSvg(drawing: Drawing): string {
-  return frame(0, SCENE_WIDTH, nukey(NUKEY_X, NUKEY_Y, drawing.pose) + drawing.prop)
+export function drawingSvg(drawing: Drawing, theme: Theme = THEMES[DEFAULT_THEME]): string {
+  return frame(0, SCENE_WIDTH, nukey(NUKEY_X, NUKEY_Y, drawing.pose, theme) + drawing.prop)
 }
 
 type Frame = readonly [string, string, string]

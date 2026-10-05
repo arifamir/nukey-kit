@@ -1,5 +1,7 @@
 import type { Meter } from '../types'
-import { BODY, GREY, ORANGE, SCENE_HEIGHT, TRIM, WINDOW } from './scenes'
+import { GREY, SCENE_HEIGHT } from './scenes'
+import type { Theme } from './themes'
+import { DEFAULT_THEME, THEMES } from './themes'
 
 const RED = '#E5534B'
 const LIGHT = '#F2C14E'
@@ -32,7 +34,7 @@ function colourOf(unit: number, units: number, used: number | null, colour: stri
 
 // A row of buttons that light up one by one as a rate-limit window is used, the
 // ones not reached yet in grey. Nothing where the account has no such window.
-function buttons(x: number, y: number, radius: number, gap: number, units: number, used: number | null): string {
+function buttons(x: number, y: number, radius: number, gap: number, units: number, used: number | null, trim: string): string {
   if (used === null) {
     return ''
   }
@@ -44,7 +46,7 @@ function buttons(x: number, y: number, radius: number, gap: number, units: numbe
 
     row +=
       `<circle cx="${round(x + unit * gap)}" cy="${y}" r="${radius}" fill="${fill ?? GREY}"${fill === undefined ? ' opacity="0.6"' : ''} ` +
-      `stroke="${TRIM}" stroke-width="0.8"/>`
+      `stroke="${trim}" stroke-width="0.8"/>`
   }
 
   return row
@@ -56,15 +58,16 @@ export const meterWidth = (meter: Meter) => PANEL_WIDTH + (meter.fiveHour === nu
 
 // A microwave's control panel: nine power bars, rising left to right, that
 // light up with the context. Beside it a row of five buttons for the five-hour
-// window, and below that seven smaller ones for the week.
-export function meterSvg(meter: Meter): string {
+// window, and below that seven smaller ones for the week. The panel and the lit
+// bars take the theme's colours.
+export function meterSvg(meter: Meter, theme: Theme = THEMES[DEFAULT_THEME]): string {
   const width = meterWidth(meter)
   const floor = 48
   let bars = ''
 
   for (let bar = 0; bar < BARS; bar++) {
     const height = round(8 + bar * 3.6)
-    const fill = colourOf(bar, BARS, meter.context, ORANGE)
+    const fill = colourOf(bar, BARS, meter.context, theme.accent)
 
     bars +=
       `<rect x="${round(11 + bar * 6.8)}" y="${round(floor - height)}" width="4.6" height="${height}" rx="1.2" ` +
@@ -74,11 +77,11 @@ export function meterSvg(meter: Meter): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${SCENE_HEIGHT}" width="${width}" height="${SCENE_HEIGHT}" ` +
     `shape-rendering="geometricPrecision">` +
-    `<rect x="3" y="4" width="74" height="52" rx="6" fill="${BODY}" stroke="${TRIM}" stroke-width="1.5"/>` +
-    `<rect x="7" y="8" width="66" height="44" rx="3" fill="${WINDOW}"/>` +
+    `<rect x="3" y="4" width="74" height="52" rx="6" fill="${theme.body}" stroke="${theme.trim}" stroke-width="1.5"/>` +
+    `<rect x="7" y="8" width="66" height="44" rx="3" fill="${theme.window}"/>` +
     bars +
-    buttons(90.5, 23, 4, 9.1, FIVE_HOUR_BUTTONS, meter.fiveHour) +
-    buttons(89.3, 43, 2.8, 6.3, WEEK_BUTTONS, meter.week) +
+    buttons(90.5, 23, 4, 9.1, FIVE_HOUR_BUTTONS, meter.fiveHour, theme.trim) +
+    buttons(89.3, 43, 2.8, 6.3, WEEK_BUTTONS, meter.week, theme.trim) +
     `</svg>`
   )
 }
